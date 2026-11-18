@@ -32,6 +32,7 @@ jobs:
         run: |
           rattler-build build --recipe prebuilt/compact-encoding -m prebuilt/variants.yaml -c conda-forge
           rattler-build build --recipe prebuilt/bare-rpc -m prebuilt/variants.yaml -c conda-forge
+          rattler-build build --recipe prebuilt/bare-stow-host -m prebuilt/variants.yaml -c conda-forge
       - uses: actions/upload-artifact@v4
         with:
           name: dependencies
@@ -60,6 +61,11 @@ jobs:
         with:
           name: dependencies
           path: output/noarch
+      - uses: prefix-dev/rattler-build-action@v0.2.39
+        with:
+          recipe-path: prebuilt/bare-sidecar/recipe.yaml
+          build-args: --variant-config prebuilt/variants.yaml --target-platform ${{ matrix.platform }} -c conda-forge
+          upload-artifact: false
       - uses: prefix-dev/rattler-build-action@v0.2.39
         with:
           recipe-path: prebuilt/tetherto-qvac-sdk/recipe.yaml

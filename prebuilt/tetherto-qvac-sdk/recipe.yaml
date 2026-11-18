@@ -1,7 +1,7 @@
 context:
   # BEGIN RELEASE - maintained by scripts/update_prebuilt.py
   version: "0.24.0"
-  build_number: 0
+  build_number: 1
   wheel_linux_64: "tetherto_qvac_sdk-0.24.0-py3-none-manylinux_2_35_x86_64.whl"
   sha256_linux_64: "35cf4014ec16312a8e7491aeb2be8dd9f012d37a0e246f9c9450c05e25a7e41a"
   wheel_linux_aarch64: "tetherto_qvac_sdk-0.24.0-py3-none-manylinux_2_35_aarch64.whl"
@@ -24,6 +24,14 @@ source:
   - url: https://github.com/tetherto/qvac/releases/download/sdk-v${{ version }}/${{ wheel }}
     sha256: ${{ wheel_sha256 }}
     file_name: ${{ wheel }}
+
+  # The stowed worker no longer includes loose license files.
+  - url: https://raw.githubusercontent.com/tetherto/qvac/sdk-v${{ version }}/packages/inference/LICENSE
+    sha256: 115146ca883126909247c429e0691b4f0a6c237e155036a4200cd224215a56df
+    file_name: LICENSE
+  - url: https://raw.githubusercontent.com/tetherto/qvac/sdk-v${{ version }}/packages/inference/NOTICE
+    sha256: 672be3ed779631cb68db0100537cf82467d87fb284b45a0fb1ff610238fced47
+    file_name: NOTICE
 
 build:
   number: ${{ build_number }}
@@ -52,8 +60,9 @@ requirements:
     - pip
   run:
     - python >=${{ python_min }}
-    - bare-rpc >=0.0.1,<0.1
-    - compact-encoding >=0.0.1
+    - bare-rpc >=0.3.0,<0.4
+    - bare-sidecar >=0.1.3,<0.2
+    - bare-stow-host >=0.2.1,<0.3
     - pydantic >=2.6,<3
     - if: linux
       then:

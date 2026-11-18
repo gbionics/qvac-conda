@@ -7,9 +7,10 @@ from source will live in a separate directory.
 
 The `tetherto-qvac-sdk` recipe starts at [SDK v0.23.0](https://github.com/tetherto/qvac/releases/tag/sdk-v0.23.0)
 and includes the bundled worker and Bare runtime. It supports Python 3.10–3.14 on
-Linux x86-64 and ARM64 (glibc >=2.35), Apple Silicon (macOS >=11), and Windows
-x86-64. The Python-only `bare-rpc` and `compact-encoding` dependencies are also
-packaged because they are unavailable from conda-forge.
+Linux x86-64 and ARM64 (glibc >=2.35), Apple Silicon (macOS >=13), and Windows
+x86-64. The Python-only `bare-rpc`, `bare-stow-host`, and `compact-encoding`
+dependencies are also packaged, alongside the platform-specific `bare-sidecar`
+wheels that provide the Bare runtime.
 
 After publication, install with:
 
@@ -26,31 +27,37 @@ Build locally with [rattler-build](https://github.com/prefix-dev/rattler-build)
 ```sh
 rattler-build build --recipe prebuilt/compact-encoding -m prebuilt/variants.yaml -c conda-forge
 rattler-build build --recipe prebuilt/bare-rpc -m prebuilt/variants.yaml -c conda-forge
+rattler-build build --recipe prebuilt/bare-stow-host -m prebuilt/variants.yaml -c conda-forge
+rattler-build build --recipe prebuilt/bare-sidecar -m prebuilt/variants.yaml -c conda-forge
 rattler-build build --recipe prebuilt/tetherto-qvac-sdk -m prebuilt/variants.yaml -c conda-forge
 ```
 
-The local `output/` channel is automatically searched for the two dependencies.
+The local `output/` channel is automatically searched for these dependencies.
 All recipes live directly under `prebuilt/`. Pass `-m prebuilt/variants.yaml`
 to load the shared Python minimum. Pure Python recipes
 follow the [conda-forge noarch conventions](https://conda-forge.org/docs/maintainer/example_recipes/pure-python/)
 and test the minimum and latest Python.
 Pure Python recipes build the sdists with hatchling and use their bundled licenses
-and notices. The SDK extracts the matching Apache license and QVAC notice bundled
-with `@qvac/inference` from its wheel at build time.
+and notices. The SDK fetches the matching Apache license and QVAC notice from
+`packages/inference` at the SDK release tag, with pinned checksums; its stowed
+worker wheel no longer contains loose license files. `bare-sidecar` extracts
+its bundled license and notice from the platform wheel.
 The SDK builds once per platform with Python 3.10, using
 `build.python.version_independent: true` and a runtime dependency on `python >=3.10`.
 The wheel's Python client uses no CPython C API, so no `python-abi3` dependency
-is needed. The package stays platform-specific because it contains the Bare
-runtime and native worker addons. The same package is tested on Python 3.10–3.14,
-with the bundled Bare smoke test running on Python 3.10. CI builds four SDK
-packages per release, one per platform.
+is needed. The SDK package stays platform-specific because it contains native
+worker addons; the Bare runtime lives in the platform-specific `bare-sidecar`
+package. The same package is tested on Python 3.10–3.14,
+with the Bare smoke tests running on Python 3.10. CI builds four SDK and four
+`bare-sidecar` packages per release, one of each per platform.
 Each build tests Python imports, dependency metadata (`pip check`), and execution
 of the bundled Bare runtime. These checks do not download models or exercise GPU
 inference. Upstream binaries retain their loader paths and macOS signatures.
 On Linux, the build also runs `check-glibc` from `cf-nvidia-tools` against every
-installed ELF file, including Bare and native addons. Its `c_stdlib_version`
-environment variable comes from `minimum_glibc`, the same value used for the
-`__glibc` runtime constraint. A binary requiring newer glibc fails the build.
+installed ELF file, including native addons, and the sidecar build checks Bare.
+The `c_stdlib_version` environment variable comes from `minimum_glibc`, the same
+value used for each recipe's `__glibc` runtime constraint (2.35 for the SDK, 2.34
+for `bare-sidecar`). A binary requiring newer glibc fails the build.
 
 `.github/workflows/prebuilt.yml` builds on pull requests, pushes to `main`, and
 manual dispatch. After all platform builds pass, runs on `main` publish the

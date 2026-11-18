@@ -1,0 +1,91 @@
+schema_version: 1
+
+context:
+  version: "0.1.3"
+  minimum_glibc: "2.34"
+  minimum_osx: "13.0"
+
+package:
+  name: bare-sidecar
+  version: ${{ version }}
+
+source:
+  - if: linux and x86_64
+    then:
+      url: https://files.pythonhosted.org/packages/af/98/7d8ac6ea3f7bd28cb082b55315ee5fab966bac4f70c931f2e31bbe0d6191/bare_sidecar-0.1.3-py3-none-manylinux_2_34_x86_64.whl
+      file_name: bare_sidecar-0.1.3-py3-none-manylinux_2_34_x86_64.whl
+      sha256: 96422f7ee1b24fff3ca48b9edee148422b4279448e8839f1ce3f6752150b9f97
+  - if: linux and aarch64
+    then:
+      url: https://files.pythonhosted.org/packages/1e/12/9f9ea4ca422d9e61eb4ce1f689bc1f2181ad5ded88c2d24b73c99584163c/bare_sidecar-0.1.3-py3-none-manylinux_2_34_aarch64.whl
+      file_name: bare_sidecar-0.1.3-py3-none-manylinux_2_34_aarch64.whl
+      sha256: 1ba20012ba1405ee9d272f3a5da0ba4a0a06959804d1457724c109f97c1c0cfc
+  - if: osx and arm64
+    then:
+      url: https://files.pythonhosted.org/packages/9c/1d/d76178fb8d1c759114056026f2c68c6b84ea6e68a3de2d9a115c7f315d81/bare_sidecar-0.1.3-py3-none-macosx_13_0_arm64.whl
+      file_name: bare_sidecar-0.1.3-py3-none-macosx_13_0_arm64.whl
+      sha256: 8df09772ea5578a616095cac41f37bb55352873e17cb1f928b09828d601118b8
+  - if: win and x86_64
+    then:
+      url: https://files.pythonhosted.org/packages/7a/ae/b85539137a50e33af4168ad53e1b59b112790a684cb98140e823aa1d65ce/bare_sidecar-0.1.3-py3-none-win_amd64.whl
+      file_name: bare_sidecar-0.1.3-py3-none-win_amd64.whl
+      sha256: 46bdee20b2e6638ae92299dc74324023d83036eded397b18c1920271d9918c53
+
+build:
+  number: 0
+  python:
+    version_independent: true
+  skip: not (linux and (x86_64 or aarch64) or osx and arm64 or win and x86_64)
+  # Preserve the upstream executable's loader paths and macOS signature.
+  dynamic_linking:
+    binary_relocation: false
+  script:
+    content:
+      - if: win
+        then: '"%PYTHON%" "%RECIPE_DIR%/install.py"'
+        else: '"$PYTHON" "$RECIPE_DIR/install.py"'
+    env:
+      c_stdlib_version: ${{ minimum_glibc }}
+
+requirements:
+  build:
+    - if: linux
+      then:
+        - cf-nvidia-tools >=1,<2
+        - binutils
+  host:
+    - python ${{ python_min }}.*
+    - pip
+  run:
+    - python >=${{ python_min }}
+    - if: linux
+      then:
+        - __glibc >=${{ minimum_glibc }}
+        - libstdcxx-ng
+        - libgcc-ng
+    - if: osx
+      then: __osx >=${{ minimum_osx }}
+
+tests:
+  - python:
+      imports:
+        - bare_sidecar
+      python_version:
+        - ${{ python_min }}.*
+        - "3.11.*"
+        - "3.12.*"
+        - "3.13.*"
+        - "3.14.*"
+      pip_check: true
+  - script: smoke_test.py
+    requirements:
+      run:
+        - python ${{ python_min }}.*
+
+about:
+  homepage: https://github.com/holepunchto/bare-sidecar-python
+  summary: Start and manage processes with the bundled Bare runtime
+  license: Apache-2.0
+  license_file:
+    - LICENSE
+    - NOTICE
