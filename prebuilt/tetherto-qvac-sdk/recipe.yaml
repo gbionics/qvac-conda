@@ -1,17 +1,17 @@
 context:
   # BEGIN RELEASE - maintained by scripts/update_prebuilt.py
-  version: "0.23.0"
-  build_number: 1
-  wheel_linux_64: "tetherto_qvac_sdk-0.23.0-py3-none-manylinux_2_35_x86_64.whl"
-  sha256_linux_64: "632c583f3f888875323b186644674319c17180871f5bf9991e1f61039a969be6"
-  wheel_linux_aarch64: "tetherto_qvac_sdk-0.23.0-py3-none-manylinux_2_35_aarch64.whl"
-  sha256_linux_aarch64: "77617f2245e78ddb533629d5bdec703c6e9ee095343b70f65da45905c3f80e0e"
-  wheel_osx_arm64: "tetherto_qvac_sdk-0.23.0-py3-none-macosx_11_0_arm64.whl"
-  sha256_osx_arm64: "e2c54f5ae11b785ced89d0f973d7ec3008767ff11189f2356501aabe8b1f652d"
-  wheel_win_64: "tetherto_qvac_sdk-0.23.0-py3-none-win_amd64.whl"
-  sha256_win_64: "3d123fb1f2d88384b64c8b657dbb6f404727aa9beeaaa59858abc920e065e3b1"
+  version: "0.24.0"
+  build_number: 0
+  wheel_linux_64: "tetherto_qvac_sdk-0.24.0-py3-none-manylinux_2_35_x86_64.whl"
+  sha256_linux_64: "35cf4014ec16312a8e7491aeb2be8dd9f012d37a0e246f9c9450c05e25a7e41a"
+  wheel_linux_aarch64: "tetherto_qvac_sdk-0.24.0-py3-none-manylinux_2_35_aarch64.whl"
+  sha256_linux_aarch64: "f8081e14e64c8fe425b0e287eb631faedde62c96a77278835a9caa2bef2deae5"
+  wheel_osx_arm64: "tetherto_qvac_sdk-0.24.0-py3-none-macosx_13_0_arm64.whl"
+  sha256_osx_arm64: "0018839873ca45304eb28f77d33b65c692524e201c041be25da9fa66b854d091"
+  wheel_win_64: "tetherto_qvac_sdk-0.24.0-py3-none-win_amd64.whl"
+  sha256_win_64: "40a1d2ef827c444991569966e0caf278b44263c80500accba9ea77fe82988050"
   minimum_glibc: "2.35"
-  minimum_osx: "11.0"
+  minimum_osx: "13.0"
   # END RELEASE
   wheel: ${{ wheel_linux_64 if linux and x86_64 else wheel_linux_aarch64 if linux and aarch64 else wheel_osx_arm64 if osx and arm64 else wheel_win_64 }}
   wheel_sha256: ${{ sha256_linux_64 if linux and x86_64 else sha256_linux_aarch64 if linux and aarch64 else sha256_osx_arm64 if osx and arm64 else sha256_win_64 }}
