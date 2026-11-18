@@ -1,0 +1,43 @@
+schema_version: 1
+
+context:
+  version: "0.0.1"
+
+package:
+  name: bare-rpc
+  version: ${{ version }}
+
+source:
+  url: https://files.pythonhosted.org/packages/a9/71/19d6a8bc040fbba6725ba16ca4025cd4075430916c0a6c8aead5c83f331e/bare_rpc-0.0.1.tar.gz
+  sha256: 787372ed360a66c05c2d2c53865ff2d675101c311630e934acc3a8c2277b5435
+
+build:
+  number: 0
+  noarch: python
+  script: ${{ PYTHON }} -m pip install . -vv
+
+requirements:
+  host:
+    - python ${{ python_min }}.*
+    - hatchling
+    - pip
+  run:
+    - python >=${{ python_min }}
+    - compact-encoding >=0.0.1
+
+tests:
+  - python:
+      imports:
+        - bare_rpc
+      python_version:
+        - ${{ python_min }}.*
+        - "*"
+      pip_check: true
+
+about:
+  homepage: https://github.com/holepunchto/bare-rpc-python
+  summary: Pure Python bare-rpc codec and asynchronous RPC runtime
+  license: Apache-2.0
+  license_file:
+    - LICENSE
+    - NOTICE

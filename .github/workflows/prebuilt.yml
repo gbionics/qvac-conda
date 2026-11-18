@@ -1,0 +1,95 @@
+name: Build prebuilt packages
+
+on:
+  push:
+    branches: [main]
+    paths: ["prebuilt/**", "scripts/**", ".github/workflows/prebuilt.yml"]
+  pull_request:
+    paths: ["prebuilt/**", "scripts/**", ".github/workflows/prebuilt.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prebuilt-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  dependencies:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Test release updater
+        run: python -m unittest discover -s tests -v
+      - uses: prefix-dev/rattler-build-action@v0.2.39
+        with:
+          setup-only: true
+      - name: Build pure Python sdists in dependency order
+        run: |
+          rattler-build build --recipe prebuilt/compact-encoding -m prebuilt/variants.yaml -c conda-forge
+          rattler-build build --recipe prebuilt/bare-rpc -m prebuilt/variants.yaml -c conda-forge
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dependencies
+          path: output/noarch/*.conda
+          if-no-files-found: error
+
+  sdk:
+    needs: dependencies
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [linux-64, linux-aarch64, osx-arm64, win-64]
+        include:
+          - runner: ubuntu-24.04
+            platform: linux-64
+          - runner: ubuntu-24.04-arm
+            platform: linux-aarch64
+          - runner: macos-15
+            platform: osx-arm64
+          - runner: windows-2022
+            platform: win-64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v4
+        with:
+          name: dependencies
+          path: output/noarch
+      - uses: prefix-dev/rattler-build-action@v0.2.39
+        with:
+          recipe-path: prebuilt/tetherto-qvac-sdk/recipe.yaml
+          build-args: --variant-config prebuilt/variants.yaml --target-platform ${{ matrix.platform }} -c conda-forge
+          upload-artifact: false
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sdk-${{ matrix.platform }}
+          path: output/${{ matrix.platform }}/*.conda
+          if-no-files-found: error
+
+  publish:
+    needs: [dependencies, sdk]
+    if: github.repository == 'gbionics/qvac-conda' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: packages
+          merge-multiple: true
+      - uses: prefix-dev/rattler-build-action@v0.2.39
+        with:
+          setup-only: true
+      - name: Publish to prefix.dev using trusted publishing
+        shell: bash
+        run: |
+          mapfile -d '' packages < <(find packages -type f -name '*.conda' -print0)
+          test "${#packages[@]}" -gt 0
+          rattler-build upload prefix --channel gbionics/qvac-prebuilt --skip-existing "${packages[@]}"
