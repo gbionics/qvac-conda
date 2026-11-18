@@ -1,0 +1,90 @@
+context:
+  # BEGIN RELEASE - maintained by scripts/update_prebuilt.py
+  version: "0.23.0"
+  build_number: 1
+  wheel_linux_64: "tetherto_qvac_sdk-0.23.0-py3-none-manylinux_2_35_x86_64.whl"
+  sha256_linux_64: "632c583f3f888875323b186644674319c17180871f5bf9991e1f61039a969be6"
+  wheel_linux_aarch64: "tetherto_qvac_sdk-0.23.0-py3-none-manylinux_2_35_aarch64.whl"
+  sha256_linux_aarch64: "77617f2245e78ddb533629d5bdec703c6e9ee095343b70f65da45905c3f80e0e"
+  wheel_osx_arm64: "tetherto_qvac_sdk-0.23.0-py3-none-macosx_11_0_arm64.whl"
+  sha256_osx_arm64: "e2c54f5ae11b785ced89d0f973d7ec3008767ff11189f2356501aabe8b1f652d"
+  wheel_win_64: "tetherto_qvac_sdk-0.23.0-py3-none-win_amd64.whl"
+  sha256_win_64: "3d123fb1f2d88384b64c8b657dbb6f404727aa9beeaaa59858abc920e065e3b1"
+  minimum_glibc: "2.35"
+  minimum_osx: "11.0"
+  # END RELEASE
+  wheel: ${{ wheel_linux_64 if linux and x86_64 else wheel_linux_aarch64 if linux and aarch64 else wheel_osx_arm64 if osx and arm64 else wheel_win_64 }}
+  wheel_sha256: ${{ sha256_linux_64 if linux and x86_64 else sha256_linux_aarch64 if linux and aarch64 else sha256_osx_arm64 if osx and arm64 else sha256_win_64 }}
+
+package:
+  name: tetherto-qvac-sdk
+  version: ${{ version }}
+
+source:
+  - url: https://github.com/tetherto/qvac/releases/download/sdk-v${{ version }}/${{ wheel }}
+    sha256: ${{ wheel_sha256 }}
+    file_name: ${{ wheel }}
+
+build:
+  number: ${{ build_number }}
+  python:
+    version_independent: true
+  skip: not (linux and (x86_64 or aarch64) or osx and arm64 or win and x86_64)
+  # Upstream binaries use their own relative loader paths and signatures.
+  dynamic_linking:
+    binary_relocation: false
+  script:
+    content:
+      - if: win
+        then: '"%PYTHON%" "%RECIPE_DIR%/install.py"'
+        else: '"$PYTHON" "$RECIPE_DIR/install.py"'
+    env:
+      c_stdlib_version: ${{ minimum_glibc }}
+
+requirements:
+  build:
+    - if: linux
+      then:
+        - cf-nvidia-tools >=1,<2
+        - binutils
+  host:
+    - python ${{ python_min }}.*
+    - pip
+  run:
+    - python >=${{ python_min }}
+    - bare-rpc >=0.0.1,<0.1
+    - compact-encoding >=0.0.1
+    - pydantic >=2.6,<3
+    - if: linux
+      then:
+        - __glibc >=${{ minimum_glibc }}
+        - libstdcxx-ng
+        - libgcc-ng
+    - if: osx
+      then: __osx >=${{ minimum_osx }}
+
+tests:
+  - python:
+      imports:
+        - tetherto.qvac_sdk
+        - tetherto.qvac_sdk.models
+      python_version:
+        - ${{ python_min }}.*
+        - "3.11.*"
+        - "3.12.*"
+        - "3.13.*"
+        - "3.14.*"
+      pip_check: true
+  - script: smoke_test.py
+    requirements:
+      run:
+        - python ${{ python_min }}.*
+
+about:
+  homepage: https://github.com/tetherto/qvac
+  summary: QVAC Python SDK with the official bundled worker and Bare runtime
+  license: Apache-2.0
+  license_file:
+    - LICENSE
+    - NOTICE
+  repository: https://github.com/tetherto/qvac

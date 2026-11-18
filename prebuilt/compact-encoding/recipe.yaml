@@ -1,0 +1,42 @@
+schema_version: 1
+
+context:
+  version: "0.1.1"
+
+package:
+  name: compact-encoding
+  version: ${{ version }}
+
+source:
+  url: https://files.pythonhosted.org/packages/c6/a8/97622f7cd388a3f4430695b5f4cf4b2b0e4763d39335af5206cb153436a3/compact_encoding-0.1.1.tar.gz
+  sha256: 8c849d3379c0d297f89e4bc656d953b4c9599be9e7fec2d3ce77a5e78a50f301
+
+build:
+  number: 0
+  noarch: python
+  script: ${{ PYTHON }} -m pip install . -vv
+
+requirements:
+  host:
+    - python ${{ python_min }}.*
+    - hatchling
+    - pip
+  run:
+    - python >=${{ python_min }}
+
+tests:
+  - python:
+      imports:
+        - compact_encoding
+      python_version:
+        - ${{ python_min }}.*
+        - "*"
+      pip_check: true
+
+about:
+  homepage: https://github.com/holepunchto/compact-encoding-python
+  summary: Pure Python compact-encoding binary wire codec
+  license: Apache-2.0
+  license_file:
+    - LICENSE
+    - NOTICE

@@ -1,0 +1,56 @@
+name: Check upstream SDK releases
+
+on:
+  schedule:
+    - cron: "23 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-prebuilt
+  cancel-in-progress: false
+
+jobs:
+  update:
+    if: github.repository == 'gbionics/qvac-conda'
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Check all stable SDK releases
+        id: update
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/update_prebuilt.py
+      - uses: peter-evans/create-pull-request@v7
+        id: pr
+        if: steps.update.outputs.version != ''
+        with:
+          branch: automation/update-prebuilt-sdk
+          delete-branch: true
+          add-paths: prebuilt/tetherto-qvac-sdk/recipe.yaml
+          commit-message: "Update prebuilt QVAC SDK to ${{ steps.update.outputs.version }}"
+          title: "Update prebuilt QVAC SDK to ${{ steps.update.outputs.version }}"
+          body: |
+            Update the bundled SDK wheels to [sdk-v${{ steps.update.outputs.version }}](https://github.com/tetherto/qvac/releases/tag/sdk-v${{ steps.update.outputs.version }}).
+
+            Refresh all four platform filenames, SHA-256 checksums, and minimum OS versions; reset the build number to zero.
+            Review upstream dependency and license changes before merging.
+
+            The updater dispatches **Build prebuilt packages** on this branch to validate the update.
+      # GITHUB_TOKEN PRs do not trigger pull_request workflows; explicit dispatch does.
+      - name: Validate the update branch
+        if: steps.pr.outputs.pull-request-operation == 'created' || steps.pr.outputs.pull-request-operation == 'updated'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run prebuilt.yml --ref automation/update-prebuilt-sdk
