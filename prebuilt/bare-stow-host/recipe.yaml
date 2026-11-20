@@ -1,0 +1,42 @@
+schema_version: 1
+
+context:
+  version: "0.2.1"
+
+package:
+  name: bare-stow-host
+  version: ${{ version }}
+
+source:
+  url: https://files.pythonhosted.org/packages/10/00/cca5e8a050c8aaef7e5acdd4049fe357baa1890c458bdf485ee8ce95e9d2/bare_stow_host-0.2.1.tar.gz
+  sha256: 3da69f8e6be4f0a4866632c5ae02b4692d6fd757bff52c8d7d8a5104b15f2a6d
+
+build:
+  number: 0
+  noarch: python
+  script: ${{ PYTHON }} -m pip install . -vv
+
+requirements:
+  host:
+    - python ${{ python_min }}.*
+    - hatchling
+    - pip
+  run:
+    - python >=${{ python_min }}
+
+tests:
+  - python:
+      imports:
+        - bare_stow_host
+      python_version:
+        - ${{ python_min }}.*
+        - "*"
+      pip_check: true
+
+about:
+  homepage: https://github.com/holepunchto/bare-stow-host-python
+  summary: Pure Python host side of the bare-stow lifecycle
+  license: Apache-2.0
+  license_file:
+    - LICENSE
+    - NOTICE
