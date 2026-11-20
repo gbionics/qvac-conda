@@ -73,6 +73,10 @@ repository Actions settings, enable **Allow GitHub Actions to create and approve
 pull requests**. The updater uses `GITHUB_TOKEN` and explicitly dispatches the
 build workflow on the PR branch, since token-created PRs do not start PR workflows.
 The updater and scheduled jobs become available once merged into the default branch.
+Maintainers may push fixes to the update PR branch. Once it contains a commit not
+made by the updater, the nightly job no longer modifies it and only warns when a
+newer release appears. Merge or close the PR and delete the branch to resume
+automatic updates.
 
 To check the updater locally without modifying the recipe:
 
